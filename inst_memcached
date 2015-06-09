@@ -1,7 +1,7 @@
 #!/bin/bash
 # -------------------------------------------------------
-# inst_memcached: Installs memcached on a cPanel server
-# inst_memcached Version: .01
+# memcached_installer: Installs memcached on a cPanel server
+# memcached_installer Version: .01
 # ---------------------------------------------------
 # InterGenStudios: 6-9-15
 # Copyright (c) 2015: Christopher 'InterGen' Cork  InterGenStudios
@@ -10,7 +10,7 @@
 # License: GPL-2.0+
 # URL: http://opensource.org/licenses/gpl-license.php
 # ---------------------------------------------------
-# inst_memcached is free software:
+# memcached_installer is free software:
 # You may redistribute it and/or modify it under the terms of the
 # GNU General Public License as published by the Free Software
 # Foundation, either version 2 of the License, or (at your discretion)
