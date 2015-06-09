@@ -1,0 +1,163 @@
+#!/bin/bash
+# -------------------------------------------------------
+# inst_memcached: Installs memcached on a cPanel server
+# inst_memcached Version: .01
+# ---------------------------------------------------
+# InterGenStudios: 6-9-15
+# Copyright (c) 2015: Christopher 'InterGen' Cork  InterGenStudios
+# URL: https://intergenstudios.com
+# --------------------------------
+# License: GPL-2.0+
+# URL: http://opensource.org/licenses/gpl-license.php
+# ---------------------------------------------------
+# inst_memcached is free software:
+# You may redistribute it and/or modify it under the terms of the
+# GNU General Public License as published by the Free Software
+# Foundation, either version 2 of the License, or (at your discretion)
+# any later version.
+# ------------------
+
+HEADER () {
+    echo
+    echo "--------------------------------------------------------------------------------------"
+    echo "    Memcached Installer"
+    echo "--------------------------------------------------------------------------------------"
+    echo
+}
+
+clear
+HEADER
+cd /root/support
+
+echo "Fetching libevent-2.0.17-stable..."
+wget -q https://github.com/downloads/libevent/libevent/libevent-2.0.17-stable.tar.gz --no-check-certificate &&
+
+printf "\n\n"
+echo "Preparing to compile from source..."
+tar -xf libevent-2.0.17-stable.tar.gz &&
+cd libevent-2.0.17-stable
+./configure 2>&1 &&
+
+printf "\n\n"
+echo "Compiling libevent-2.0.17-stable, this will take a moment..."
+make && make install >> libevent_buildlog 2>&1 &&
+mv libevent_buildlog /var/log/
+
+printf "\n\n"
+echo "Compilation complete for libevent-2.0.17-stable"
+sleep 1
+
+clear
+HEADER
+cd /root/support
+
+echo "Fetching memcached-1.4.13..."
+wget -q http://memcached.googlecode.com/files/memcached-1.4.13.tar.gz &&
+
+printf "\n\n"
+echo "Preparing to compile from source..."
+tar -xzf memcached-1.4.13.tar.gz &&
+cd memcached-1.4.13
+./configure 2>&1 &&
+
+printf "\n\n"
+echo "Compiling memcached-1.4.13, this will take a moment..."
+make && make install >> memcached_buildlog 2>&1 &&
+mv memcached_buildlog /var/log/
+
+printf "\n\n"
+echo "Compilation complete for memcached-1.4.13"
+sleep 1
+
+clear
+HEADER
+echo "Identifying arch..."
+sleep 1
+if [ -z $(uname -a | grep x86) ]; then
+    arch=32
+    printf "\n\n"
+    echo "/usr/local/lib/" > /etc/ld.so.conf.d/libevent-i386.conf
+else
+    arch=64
+    printf "\n\n"
+    echo "/usr/local/lib/" > /etc/ld.so.conf.d/libevent-x86_64.conf
+fi
+printf "\n\n"
+echo "$arch-bit OS identified"
+printf "\n\n"
+echo "Configuring memcached for $arch-bit OS..."
+ldconfig &&
+memcached -d -u nobody -m 1024 127.0.0.1 -p 11211 &&
+printf "\n\n"
+echo "Configuration complete"
+sleep 1
+
+clear
+HEADER
+cd /root/support
+echo "Fetching libmemcached-1.0.4...."
+wget -q http://launchpad.net/libmemcached/1.0/1.0.4/+download/libmemcached-1.0.4.tar.gz &&
+
+printf "\n\n"
+echo "Preparing to compile from source..."
+tar -zxvf libmemcached-1.0.4.tar.gz &&
+cd libmemcached-1.0.4
+./configure 2>&1 &&
+
+printf "\n\n"
+echo "Compiling libmemcached-1.0.4, this will take a moment..."
+make && make install >> libmemcached_buildlog 2>&1 &&
+mv libmemcached_buildlog /var/log/
+
+printf "\n\n"
+echo "Compilation complete for libmemcached-1.0.4"
+printf "\n\n"
+sleep 1
+
+clear
+HEADER
+echo "Installing memcached via PECL, this will take a moment..."
+printf "\n" | pecl install memcached > memcached_pecl_install_log
+mv memcached_pecl_install_log /var/log/
+
+printf "\n\n"
+echo "PECL installation of memcached complete"
+printf "\n\n"
+sleep 1
+
+clear
+HEADER
+echo "Adding memcached.so to php.ini..."
+grep -q "memcached.so" /usr/local/lib/php.ini || echo 'extension=memcached.so' >> /usr/local/lib/php.ini
+sleep 1
+
+printf "\n\n"
+echo "Adding Post-EasyApache hooks for memcached to keep it around after rebuilds..."
+for i in `grep ^extension_dir /usr/local/lib/php.ini | awk {'print $3'} | cut -d\" -f2`; do
+    ls -lah $i/memcache*
+done
+for i in `grep ^extension_dir /usr/local/lib/php.ini | awk {'print $3'} | cut -d\" -f2`; do
+    cp $i/memcached.so /root
+done
+for i in `grep ^extension_dir /usr/local/lib/php.ini | awk {'print $3'} | cut -d\" -f2`; do
+    echo -e '#!/bin/bash\ncp /root/memcached.so' "$i\ngrep -q 'memcached.so' /usr/local/lib/php.ini || echo 'extension=memcached.so' >> /usr/local/lib/php.ini\n/etc/init.d/httpd restart" > /usr/local/cpanel/scripts/posteasyapache
+done
+chmod +x /usr/local/cpanel/scripts/posteasyapache
+sleep 1
+
+
+printf "\n\n"
+echo "Fetching /etc/init.d/memcached and setting chkconfig memcached to \'on\'..."
+wget -q https://raw.githubusercontent.com/InterGenStudios/memcached_installer/master/memcached_init
+mv memcached_init /etc/init.d/memcached
+chkconfig --add memcached
+chkconfig memcached on
+sleep 2
+
+clear
+HEADER
+echo "memcached installation complete:"
+printf "\n\n"
+echo $(php -i | grep -i memcached)
+printf "\n\n\n"
+exit 0
