@@ -1,4 +1,21 @@
 #! /bin/sh
+# -------------------------------------------------------
+# memcached_installer: Installs memcached on a cPanel server
+# memcached_installer Version: .01
+# ---------------------------------------------------
+# InterGenStudios: 6-9-15
+# Copyright (c) 2015: Christopher 'InterGen' Cork  InterGenStudios
+# URL: https://intergenstudios.com
+# --------------------------------
+# License: GPL-2.0+
+# URL: http://opensource.org/licenses/gpl-license.php
+# ---------------------------------------------------
+# memcached_installer is free software:
+# You may redistribute it and/or modify it under the terms of the
+# GNU General Public License as published by the Free Software
+# Foundation, either version 2 of the License, or (at your discretion)
+# any later version.
+# ------------------
 #
 # chkconfig: - 55 45
 # description:  The memcached daemon is a network memory cache service.
@@ -18,7 +35,7 @@ MAXCONN=1024
 CACHESIZE=128
 OPTIONS=""
 
-if [ -f /etc/sysconfig/memcached ];then 
+if [ -f /etc/sysconfig/memcached ];then
         . /etc/sysconfig/memcached
 fi
 
@@ -40,7 +57,7 @@ start () {
         chown $USER /var/run/memcached
     fi
 
-        daemon --pidfile /var/run/memcached/memcached.pid /usr/local/bin/memcached -d -p $PORT -u $USER  -m $CACHESIZE -c $MAXCONN -P 
+        daemon --pidfile /var/run/memcached/memcached.pid /usr/local/bin/memcached -d -p $PORT -u $USER  -m $CACHESIZE -c $MAXCONN -P
 /var/run/memcached/memcached.pid $OPTIONS
         RETVAL=$?
         echo
